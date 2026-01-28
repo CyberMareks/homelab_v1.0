@@ -1,0 +1,10 @@
+# Ignore system logs
+*.log
+
+# Ignore OS specific files
+.DS_Store
+Thumbs.db
+
+# Ignore any sensitive local notes
+secrets.txt
+*.tmp
