@@ -34,3 +34,12 @@ The project follows a "Defense in Depth" strategy for DNS queries:
 - **Performance**: Sub-1ms response times for cached queries.
 - **Security**: DNSSEC validation enabled via Unbound.
 - **Monitoring**: Real-time metrics via Netdata integration on the Proxmox host.
+## 🔍 Bug Log & Resolution
+
+### Issue: Intermittent `NXDOMAIN` on Major Domains (e.g., Amazon.de)
+* **Symptom:** Browser intermittently fails to resolve global domains, returning `DNS_PROBE_FINISHED_NXDOMAIN`. Refreshing after 30–60 seconds resolves the issue.
+* **Diagnosis:** Recursive lookup latency. Unbound (recursive mode) was taking longer to query root servers than the browser's timeout threshold.
+* **Resolution:** 
+	1.  **Parallel Upstreams:** Reconfigured AdGuard Home to use "Parallel Requests," querying both the local Unbound instance and high-speed fallbacks (Quad9/Cloudflare) simultaneously.
+    	2.  **Optimistic Caching:** Enabled `serve-expired` in Unbound to provide immediate responses from cache while refreshing records in the background.
+    	3.  **DNS Rebind Protection:** Added critical domains to the Fritz!Box exception list to prevent the router from dropping valid local DNS responses.
