@@ -43,3 +43,8 @@ The project follows a "Defense in Depth" strategy for DNS queries:
 	1.  **Parallel Upstreams:** Reconfigured AdGuard Home to use "Parallel Requests," querying both the local Unbound instance and high-speed fallbacks (Quad9/Cloudflare) simultaneously.
     	2.  **Optimistic Caching:** Enabled `serve-expired` in Unbound to provide immediate responses from cache while refreshing records in the background.
     	3.  **DNS Rebind Protection:** Added critical domains to the Fritz!Box exception list to prevent the router from dropping valid local DNS responses.
+### ⚡ Energy Profile & Efficiency
+* **Idle Power (CPU/RAM):** ~22.6 Watts
+* **Monitoring Stack:** * **Primary:** Intel RAPL (Running Average Power Limit) interface for high-precision energy telemetry.
+* **Visualization:** Netdata Dashboard integration via the `powercap` collector.
+* **Optimization:** Even with a high TDP Xeon E5-1650 v3, the system is tuned for low-power idle states, ensuring a cost-effective 24/7 DNS infrastructure.
