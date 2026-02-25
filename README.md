@@ -54,3 +54,11 @@ The project follows a "Defense in Depth" strategy for DNS queries:
 - **Service:** Nginx Proxy Manager (NPM).
 - **Purpose:** Handling SSL termination and traffic routing.
 - **Direct ISO Management:** Utilized `wget` to fetch Debian 13 netinst images directly to `/var/lib/vz/template/iso` for upcoming VM deployments.
+
+## 🔐 Certificate Management Strategy
+- **Provider:** Let's Encrypt via Nginx Proxy Manager.
+- **Validation Method:** `DNS-01` Challenge (DuckDNS API).
+- **Security Posture:** - Zero open ports on Fritz!Box 7520.
+  - Wildcard SSL support for internal services (`*.subdomain.duckdns.org`).
+  - Automated 90-day renewal cycle via NPM Docker container.
+
