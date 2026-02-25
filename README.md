@@ -48,3 +48,9 @@ The project follows a "Defense in Depth" strategy for DNS queries:
 * **Monitoring Stack:** * **Primary:** Intel RAPL (Running Average Power Limit) interface for high-precision energy telemetry.
 * **Visualization:** Netdata Dashboard integration via the `powercap` collector.
 * **Optimization:** Even with a high TDP Xeon E5-1650 v3, the system is tuned for low-power idle states, ensuring a cost-effective 24/7 DNS infrastructure.
+
+### 🌐 Infrastructure Expansion: Reverse Proxy
+- **Environment:** Debian 13 LXC with Docker Nesting enabled.
+- **Service:** Nginx Proxy Manager (NPM).
+- **Purpose:** Handling SSL termination and traffic routing.
+- **Direct ISO Management:** Utilized `wget` to fetch Debian 13 netinst images directly to `/var/lib/vz/template/iso` for upcoming VM deployments.
