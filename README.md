@@ -66,3 +66,7 @@ The project follows a "Defense in Depth" strategy for DNS queries:
 - **Fritz!Box DNS-Rebind-Schutz:** Resolved "unrecognized name" alerts by whitelisting `<your-subdomain>.duckdns.org` in the Fritz!Box 7520 settings.
 - **AdGuard Filtering:** Whitelisted `duckdns.org` to allow automated certificate renewal challenges to pass through.
 - **DNS Leakage:** Fixed an issue where `nslookup` was returning public WAN IPs instead of local LAN IPs by clearing the AdGuard DNS cache.
+
+### 🌐 Advanced Networking: Subnet Routing
+- **Configuration:** Advertised `192.168.20.0/24` via Tailscale node `npm-proxy`.
+- **Outcome:** Unified DNS resolution. Services are accessible via local LAN IPs (192.168.x.x) regardless of physical location, eliminating the need for redundant Tailscale-specific DNS rewrites.
