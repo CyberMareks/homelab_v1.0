@@ -1,72 +1,135 @@
-# High-Availability Home-Lab DNS & Privacy Suite
-A robust, multi-container DNS architecture hosted on Proxmox VE, featuring recursive resolution, network-wide ad-blocking, and secure remote access via Tailscale.
+# 🖥️ Homelab — Personal Infrastructure Project
 
-## 🏗 Architecture
-The project follows a "Defense in Depth" strategy for DNS queries:
-1. **Client**: Connects via Local LAN or Tailscale Mesh VPN.
-2. **AdGuard Home (LXC 100)**: Primary DNS sinkhole filtering >200k rules (HaGeZi PRO Blocklist).
-3. **Unbound (LXC 102)**: A private recursive resolver that contacts Root Servers directly, eliminating reliance on upstream providers (Google/Cloudflare).
-4. **Tailscale (LXC 101)**: Acts as the secure gateway for remote mobile clients.
+> A self-hosted infrastructure project documenting my hands-on experience with Linux systems, virtualisation, networking, containerisation, and AI/LLM integration. Built and maintained as part of my development as a **Fachinformatiker Systemintegrator**.
 
+***
 
+## 🧰 Core Skills Demonstrated
 
-## 💻 Hardware: "The Workhorse"
-- **Host**: Dell Precision Tower 5810
-- **CPU**: Intel Xeon E5-1650 v3 (6C/12T)
-- **RAM**: 32 GB DDR4 ECC
-- **Storage**: Samsung SSD 850 EVO 250 GB (OS/LXCs)
-- **Thermals**: Idle at 36°C (Thermal paste recently serviced)
+| Domain | Technologies |
+|---|---|
+| **Virtualisation** | Proxmox VE, KVM/QEMU, GPU Passthrough (PCIe) |
+| **Containerisation** | Docker, Docker Compose |
+| **Networking** | VLAN isolation, VPN mesh (Tailscale/WireGuard), DNS filtering, Firewall (OPNsense) |
+| **Linux Administration** | CachyOS (Arch), Debian, Ubuntu — systemd, package management, hardening |
+| **Monitoring & Alerting** | Uptime Kuma, Telegram notifications, status dashboards |
+| **Security** | Vaultwarden (self-hosted password manager), network segmentation, Tailscale ACLs |
+| **AI / LLM Integration** | Ollama, Hermes Agent, local model routing, GPU-accelerated inference |
+| **Remote Access** | Tailscale VPN, SSH, RDP (xrdp/RustDesk), MobaXterm |
 
-## 🔧 Technical Implementation Details
+***
 
-### DNS Chain Configuration
-- **AdGuard Home**: Configured to use Unbound as the sole upstream via `192.168.20.4:5335`.
-- **Unbound**: Hardened configuration with `access-control` limited to the local subnet and Tailscale CGNAT range (`100.64.0.0/10`).
-- **Optimization**: LXC resources tuned (2 vCPUs, 1GB RAM for AdGuard) to handle massive filter lists without API latency.
+## 🏗️ Infrastructure Overview
 
-### Remote Access
-- Utilizes **Tailscale Split-DNS**.
-- Global Nameserver set to the AdGuard Tailscale IP with "Override Local DNS" enabled.
-- Result: Mobile devices maintain ad-blocking and recursive privacy even on cellular data.
+```
+ISP
+ │
+ ▼
+Office FritzBox (WAN uplink)
+ │
+ └─── Home FritzBox 7520 (isolated LAN)
+           │
+           └─── Proxmox Host
+                 │   Intel Xeon E5-1650 v3 | 32GB RAM
+                 │   GeForce GTX 1660 SUPER (GPU passthrough)
+                 │
+                 ├── Homepage Dashboard (Docker)
+                 ├── Vaultwarden (Docker)
+                 ├── Uptime Kuma (Docker)
+                 ├── AdGuard Home (Docker)
+                 ├── Tailscale (VPN mesh)
+                 └── Ollama + Hermes Agent (GPU VM)
+```
 
-## 🚀 Key Features
-- **Privacy**: No personal DNS data collection by third-party providers.
-- **Performance**: Sub-1ms response times for cached queries.
-- **Security**: DNSSEC validation enabled via Unbound.
-- **Monitoring**: Real-time metrics via Netdata integration on the Proxmox host.
-## 🔍 Bug Log & Resolution
+**Network isolation:** Home network is separated from the office/ISP network via the FritzBox 7520. All services are accessible remotely through Tailscale without exposing ports to the public internet.
 
-### Issue: Intermittent `NXDOMAIN` on Major Domains (e.g., Amazon.de)
-* **Symptom:** Browser intermittently fails to resolve global domains, returning `DNS_PROBE_FINISHED_NXDOMAIN`. Refreshing after 30–60 seconds resolves the issue.
-* **Diagnosis:** Recursive lookup latency. Unbound (recursive mode) was taking longer to query root servers than the browser's timeout threshold.
-* **Resolution:** 
-	1.  **Parallel Upstreams:** Reconfigured AdGuard Home to use "Parallel Requests," querying both the local Unbound instance and high-speed fallbacks (Quad9/Cloudflare) simultaneously.
-    	2.  **Optimistic Caching:** Enabled `serve-expired` in Unbound to provide immediate responses from cache while refreshing records in the background.
-    	3.  **DNS Rebind Protection:** Added critical domains to the Fritz!Box exception list to prevent the router from dropping valid local DNS responses.
-### ⚡ Energy Profile & Efficiency
-* **Idle Power (CPU/RAM):** ~22.6 Watts
-* **Monitoring Stack:** * **Primary:** Intel RAPL (Running Average Power Limit) interface for high-precision energy telemetry.
-* **Visualization:** Netdata Dashboard integration via the `powercap` collector.
-* **Optimization:** Even with a high TDP Xeon E5-1650 v3, the system is tuned for low-power idle states, ensuring a cost-effective 24/7 DNS infrastructure.
+***
 
-### 🌐 Infrastructure Expansion: Reverse Proxy
-- **Environment:** Debian 13 LXC with Docker Nesting enabled.
-- **Service:** Nginx Proxy Manager (NPM).
-- **Purpose:** Handling SSL termination and traffic routing.
-- **Direct ISO Management:** Utilized `wget` to fetch Debian 13 netinst images directly to `/var/lib/vz/template/iso` for upcoming VM deployments.
+## 📦 Services
 
-## 🔐 Certificate Management Strategy
-- **Provider:** Let's Encrypt via Nginx Proxy Manager.
-- **Validation Method:** `DNS-01` Challenge (DuckDNS API).
-- **Security Posture:** - Zero open ports on Fritz!Box 7520.
-  - Wildcard SSL support for internal services (`*.subdomain.duckdns.org`).
-  - Automated 90-day renewal cycle via NPM Docker container.
+### Homepage Dashboard
+- **Purpose:** Central landing page for all homelab services
+- **Stack:** [gethomepage.dev](https://gethomepage.dev) running in Docker
+- **Skills:** Docker, service API integration, YAML configuration
 
-### 🔧 Troubleshooting Log
-- **Fritz!Box DNS-Rebind-Schutz:** Resolved "unrecognized name" alerts by whitelisting `<your-subdomain>.duckdns.org` in the Fritz!Box 7520 settings.
-- **AdGuard Filtering:** Whitelisted `duckdns.org` to allow automated certificate renewal challenges to pass through.
-- **DNS Leakage:** Fixed an issue where `nslookup` was returning public WAN IPs instead of local LAN IPs by clearing the AdGuard DNS cache.
+### Vaultwarden
+- **Purpose:** Self-hosted password manager (Bitwarden-compatible)
+- **Stack:** Docker + reverse proxy
+- **Skills:** Docker, secrets management, HTTPS/TLS, data persistence
 
-### 🌐 Advanced Networking: Subnet Routing
-- **Configuration:** Advertised `192.168.20.0/24` via Tailscale node `npm-proxy`.
-- **Outcome:** Unified DNS resolution. Services are accessible via local LAN IPs (192.168.x.x) regardless of physical location, eliminating the need for redundant Tailscale-specific DNS rewrites.
+### Uptime Kuma
+- **Purpose:** Service monitoring and uptime tracking with alerting
+- **Stack:** Docker
+- **Skills:** Monitoring, alerting pipelines, Telegram webhook integration
+
+### AdGuard Home
+- **Purpose:** Network-wide DNS filtering and ad blocking
+- **Stack:** Docker
+- **Skills:** DNS configuration, network-level filtering, private reverse DNS
+
+### Tailscale
+- **Purpose:** Zero-config VPN mesh for secure remote access
+- **Stack:** WireGuard-based, installed on all nodes
+- **Skills:** VPN, network segmentation, ACL policy, remote access
+
+### Ollama + Hermes Agent
+- **Purpose:** Local LLM inference with intelligent model routing
+- **Stack:** Ollama on a dedicated VM with GTX 1660 SUPER GPU passthrough
+- **Skills:** GPU passthrough (PCIe), Linux GPU drivers, LLM orchestration, AI agent configuration
+
+***
+
+## 🖥️ Hardware
+
+| Component | Spec |
+|---|---|
+| **CPU** | Intel Xeon E5-1650 v3 (6C/12T) |
+| **RAM** | 32 GB DDR4 ECC |
+| **GPU** | GeForce GTX 1660 SUPER (passed through to LLM VM) |
+| **Storage** | 83 GB SSD (OS) + HDD expansion planned |
+| **Hypervisor** | Proxmox VE |
+| **OS (daily driver)** | CachyOS (Arch Linux) |
+
+***
+
+## 🗂️ Repository Structure
+
+```
+homelab/
+├── README.md
+├── docs/
+│   ├── CHANGELOG-v1.5.md
+│   └── architecture.md
+├── docker/
+│   ├── homepage/
+│   ├── vaultwarden/
+│   ├── uptime-kuma/
+│   └── adguard/
+└── scripts/
+    └── update-models.sh
+```
+
+***
+
+## 📋 Changelog
+
+| Version | Highlights |
+|---|---|
+| **v1.5** | Homepage dashboard · Uptime Kuma alerting · Ollama + Hermes Agent LLM stack |
+| **v1.0** | Proxmox setup · Tailscale · Vaultwarden · Uptime Kuma · AdGuard Home |
+
+***
+
+## 🔜 Roadmap (v2.0)
+
+- [ ] Immich — self-hosted photo management
+- [ ] Nextcloud — file sync and collaboration
+- [ ] n8n — workflow automation and AI agent pipelines
+- [ ] HDD expansion for NAS storage
+- [ ] Hermes Agent internet research integration
+
+***
+
+## 📌 About
+
+This project is built and documented as part of my **Fachinformatiker Systemintegrator** training (Umschulung). Every component is deliberately chosen to reflect real-world enterprise IT skills: virtualisation, containerisation, network security, monitoring, and modern AI infrastructure.
